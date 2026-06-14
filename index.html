@@ -1,0 +1,2061 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="当直割り当て">
+<title>当直・日直 自動振り分け（スマホ版）</title>
+<style>
+/* ========================================
+   当直・日直 自動振り分けツール - スタイル
+   ======================================== */
+
+:root {
+  --color-bg: #f4f6f9;
+  --color-panel: #ffffff;
+  --color-primary: #2563eb;
+  --color-primary-dark: #1d4ed8;
+  --color-secondary: #64748b;
+  --color-danger: #dc2626;
+  --color-warning-bg: #fef3c7;
+  --color-warning-border: #f59e0b;
+  --color-error-bg: #fee2e2;
+  --color-error-border: #ef4444;
+  --color-success: #16a34a;
+  --color-border: #e2e8f0;
+  --color-text: #1e293b;
+  --color-muted: #64748b;
+  --radius: 8px;
+  --shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Segoe UI", "Hiragino Sans", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
+  background: var(--color-bg);
+  color: var(--color-text);
+  line-height: 1.6;
+}
+
+.app-header {
+  background: linear-gradient(135deg, #1e40af, #2563eb);
+  color: #fff;
+  padding: 1.5rem 2rem;
+  box-shadow: var(--shadow);
+}
+
+.app-header h1 {
+  margin: 0 0 0.25rem;
+  font-size: 1.5rem;
+}
+
+.subtitle {
+  margin: 0;
+  opacity: 0.9;
+  font-size: 0.95rem;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1.5rem;
+}
+
+.panel {
+  background: var(--color-panel);
+  border-radius: var(--radius);
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.25rem;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--color-border);
+}
+
+.panel h2 {
+  margin: 0 0 0.75rem;
+  font-size: 1.1rem;
+  color: #334155;
+  border-bottom: 2px solid var(--color-primary);
+  padding-bottom: 0.4rem;
+}
+
+.panel-warnings {
+  border-left: 4px solid var(--color-warning-border);
+}
+
+.hint {
+  color: var(--color-muted);
+  font-size: 0.875rem;
+  margin: 0 0 0.75rem;
+}
+
+.hint-inline {
+  color: var(--color-muted);
+  font-size: 0.85rem;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.btn-row {
+  gap: 0.5rem;
+}
+
+.btn {
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-primary {
+  background: var(--color-primary);
+  color: #fff;
+}
+
+.btn-primary:hover {
+  background: var(--color-primary-dark);
+}
+
+.btn-secondary {
+  background: #e2e8f0;
+  color: var(--color-text);
+}
+
+.btn-secondary:hover {
+  background: #cbd5e1;
+}
+
+.btn-danger {
+  background: #fecaca;
+  color: var(--color-danger);
+}
+
+.btn-danger:hover {
+  background: #fca5a5;
+}
+
+.btn-small {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.8rem;
+}
+
+.file-label {
+  cursor: pointer;
+}
+
+.checkbox-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.5rem;
+}
+
+.checkbox-grid label {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  cursor: pointer;
+}
+
+.major-sunday-row {
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  background: #eff6ff;
+  border-radius: 6px;
+}
+
+.table-wrap {
+  overflow-x: auto;
+  margin-top: 0.5rem;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.data-table th,
+.data-table td {
+  border: 1px solid var(--color-border);
+  padding: 0.4rem 0.6rem;
+  text-align: left;
+}
+
+.data-table th {
+  background: #f1f5f9;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.data-table tbody tr:nth-child(even) {
+  background: #fafafa;
+}
+
+.data-table tbody tr:hover {
+  background: #f0f9ff;
+}
+
+/* 希望日程テーブル */
+.pref-table-wrap {
+  max-height: 500px;
+  overflow: auto;
+}
+
+.pref-table th,
+.pref-table td {
+  text-align: center;
+  min-width: 2.5rem;
+  padding: 0.25rem;
+}
+
+.pref-table th:first-child,
+.pref-table td:first-child {
+  position: sticky;
+  left: 0;
+  background: #f8fafc;
+  z-index: 1;
+  text-align: left;
+  min-width: 5rem;
+}
+
+.pref-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+.pref-select {
+  width: 2.75rem;
+  text-align: center;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  padding: 0.2rem 0.1rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+  background: #fff;
+}
+
+.pref-select:focus {
+  outline: 2px solid var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.pref-legend {
+  margin-bottom: 0.75rem;
+  font-size: 0.875rem;
+}
+
+.pref-legend span {
+  margin-right: 1rem;
+  font-weight: bold;
+}
+
+.pref-o { color: var(--color-success); }
+.pref-tri { color: #d97706; }
+.pref-x { color: var(--color-danger); }
+
+/* カレンダー表示 */
+.calendar-view {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.cal-header {
+  text-align: center;
+  font-weight: 600;
+  padding: 0.4rem;
+  background: #e2e8f0;
+  font-size: 0.8rem;
+}
+
+.cal-cell {
+  min-height: 90px;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  padding: 0.35rem;
+  background: #fff;
+  font-size: 0.75rem;
+}
+
+.cal-cell.other-month {
+  background: #f8fafc;
+  color: #94a3b8;
+}
+
+.cal-cell.today-highlight {
+  border-color: var(--color-primary);
+  box-shadow: inset 0 0 0 1px var(--color-primary);
+}
+
+.cal-date-num {
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.cal-duty {
+  margin: 0.15rem 0;
+  padding: 0.15rem 0.25rem;
+  border-radius: 3px;
+  line-height: 1.3;
+}
+
+.cal-duty-night {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.cal-duty-day {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.cal-duty-major {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px dashed #f59e0b;
+}
+
+.cal-duty-unassigned {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+/* 警告 */
+.warnings-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.warning-item {
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 0.4rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+}
+
+.warning-error {
+  background: var(--color-error-bg);
+  border-left: 4px solid var(--color-error-border);
+}
+
+.warning-warn {
+  background: var(--color-warning-bg);
+  border-left: 4px solid var(--color-warning-border);
+}
+
+.warning-info {
+  background: #e0f2fe;
+  border-left: 4px solid #0ea5e9;
+}
+
+.empty-msg {
+  color: var(--color-muted);
+  font-style: italic;
+}
+
+.save-status {
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--color-success);
+}
+
+.app-footer {
+  text-align: center;
+  padding: 1.5rem;
+  color: var(--color-muted);
+  font-size: 0.8rem;
+}
+
+/* ダイアログ */
+dialog {
+  border: none;
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  max-width: 400px;
+}
+
+dialog form label {
+  display: block;
+  margin-bottom: 0.75rem;
+}
+
+dialog form input[type="date"],
+dialog form select {
+  display: block;
+  width: 100%;
+  margin-top: 0.25rem;
+  padding: 0.4rem;
+}
+
+.checkbox-label {
+  display: flex !important;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.dialog-buttons {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+select.member-select {
+  min-width: 100px;
+  padding: 0.25rem;
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 0.75rem;
+  }
+
+  .panel {
+    padding: 1rem;
+  }
+
+  .cal-cell {
+    min-height: 70px;
+    font-size: 0.65rem;
+  }
+}
+
+
+/* === スマホ版追加スタイル === */
+.container { max-width: 100%; padding: 0.75rem; }
+.app-header { padding: 1rem; }
+.app-header h1 { font-size: 1.15rem; }
+details.section-details {
+  background: var(--color-panel);
+  border-radius: var(--radius);
+  margin-bottom: 0.75rem;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--color-border);
+}
+details.section-details > summary {
+  padding: 0.85rem 1rem;
+  font-weight: 600;
+  font-size: 1rem;
+  color: #334155;
+  cursor: pointer;
+  list-style: none;
+}
+details.section-details[open] > summary {
+  border-bottom: 2px solid var(--color-primary);
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.5rem;
+}
+details.section-details > summary::-webkit-details-marker { display: none; }
+details.section-details > summary::before { content: "▶ "; font-size: 0.75em; }
+details.section-details[open] > summary::before { content: "▼ "; }
+.section-body { padding: 0 1rem 1rem; }
+.btn, select, .pref-select, .member-select, .slot-type-select {
+  min-height: 44px;
+  font-size: 1rem;
+}
+.btn-row { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.btn-row .btn, .btn-row .file-label { flex: 1; min-width: calc(50% - 0.25rem); text-align: center; }
+.row .btn { flex: 1; min-width: 120px; }
+.checkbox-grid label { min-height: 44px; padding: 0.25rem 0; }
+.swipe-hint {
+  font-size: 0.8rem; color: var(--color-muted);
+  background: #f1f5f9; padding: 0.4rem 0.6rem; border-radius: 4px; margin-bottom: 0.5rem;
+}
+.pref-table-wrap { max-height: 60vh; -webkit-overflow-scrolling: touch; }
+.pref-select { width: 3rem; min-height: 44px; font-size: 1rem; }
+.pref-table th:first-child, .pref-table td:first-child {
+  min-width: 4.5rem; box-shadow: 2px 0 4px rgba(0,0,0,0.06);
+}
+.calendar-view { font-size: 0.6rem; gap: 2px; }
+.cal-cell { min-height: 52px; padding: 0.2rem; }
+.cal-duty { font-size: 0.55rem; padding: 0.1rem; }
+dialog { width: calc(100vw - 2rem); max-width: 400px; }
+#yearMonth, #majorSunday { min-height: 44px; font-size: 1rem; }
+.limit-input { min-height: 44px; font-size: 1rem; }
+.panel-warnings { border-left: 4px solid var(--color-warning-border); padding-left: 0.5rem; }
+
+</style>
+</head>
+<body>
+  <header class="app-header">
+    <h1>当直・日直 自動振り分け <small style="font-size:0.65em">スマホ版</small></h1>
+    <p class="subtitle">1ファイルで動作。LINEで送ってスマホから開けます</p>
+  </header>
+
+  <main class="container">
+    <!-- 月選択 -->
+    <details class="section-details" id="section-month"><summary>1. 対象月の選択</summary><div class="section-body">
+      
+      <div class="row">
+        <label for="yearMonth">年月：</label>
+        <select id="yearMonth"></select>
+        <button type="button" id="btnLoadMonth" class="btn btn-secondary">この月を読み込む</button>
+      </div>
+      <p class="hint">対象期間：2026年4月 〜 2028年3月</p>
+    </div></details>
+
+    <!-- 参加メンバー -->
+    <details class="section-details" id="section-members"><summary>2. 参加メンバー</summary><div class="section-body">
+      
+      <p class="hint">外病院などで参加できないメンバーはチェックを外してください。</p>
+      <div id="memberCheckboxes" class="checkbox-grid"></div>
+    </div></details>
+
+    <!-- 勤務枠 -->
+    <details class="section-details" id="section-slots"><summary>3. 勤務枠の設定</summary><div class="section-body">
+      
+      <p class="hint">デフォルトは木・金・土の当直と土曜日直です。祝日等は手動で追加・変更できます。</p>
+
+      <div class="row major-sunday-row">
+        <label for="majorSunday">大輪番の日曜：</label>
+        <select id="majorSunday">
+          <option value="">（未設定）</option>
+        </select>
+        <span class="hint-inline">大輪番 = 日直2名 + 当直1名</span>
+      </div>
+
+      <div class="row">
+        <button type="button" id="btnGenerateDefaultSlots" class="btn btn-secondary">デフォルト勤務枠を生成</button>
+        <button type="button" id="btnAddSlot" class="btn btn-secondary">勤務枠を追加</button>
+      </div>
+
+      <div class="table-wrap">
+        <p class="swipe-hint">表は横にスワイプできます</p><table class="data-table" id="slotsTable">
+          <thead>
+            <tr>
+              <th>日付</th>
+              <th>曜日</th>
+              <th>勤務種別</th>
+              <th>大輪番</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="slotsTableBody"></tbody>
+        </table>
+      </div>
+    </div></details>
+
+    <!-- 回数上限 -->
+    <details class="section-details" id="section-limits"><summary>4. 回数上限（任意）</summary><div class="section-body">
+      
+      <p class="hint">未入力の場合は自動で均等化します。数字を入れると上限として扱います。</p>
+      <div class="table-wrap">
+        <p class="swipe-hint">表は横にスワイプできます</p><table class="data-table" id="limitsTable">
+          <thead>
+            <tr>
+              <th>メンバー</th>
+              <th>当直上限</th>
+              <th>日直上限</th>
+              <th>大輪番上限</th>
+            </tr>
+          </thead>
+          <tbody id="limitsTableBody"></tbody>
+        </table>
+      </div>
+    </div></details>
+
+    <!-- 希望日程 -->
+    <details class="section-details" id="section-preferences" open><summary>5. 希望日程の入力</summary><div class="section-body">
+      
+      <p class="hint">
+        木・金・土および大輪番の日曜のみ表示されます。プルダウンで 〇（可能）／△（次点）／✕（不可）／—（未入力・基本は可能）を選んでください。
+      </p>
+      <div class="pref-legend">
+        <span class="pref-o">〇</span> 可能
+        <span class="pref-tri">△</span> 次点
+        <span class="pref-x">✕</span> 不可
+      </div>
+      <p class="swipe-hint">表は横にスワイプできます</p><div class="table-wrap pref-table-wrap">
+        <table class="data-table pref-table" id="prefTable">
+          <thead id="prefTableHead"></thead>
+          <tbody id="prefTableBody"></tbody>
+        </table>
+      </div>
+    </div></details>
+
+    <!-- 自動割り当て -->
+    <details class="section-details" id="section-assign" open><summary>6. 自動割り当て</summary><div class="section-body">
+      
+      <div class="row">
+        <button type="button" id="btnAssign" class="btn btn-primary">自動割り当てを実行</button>
+        <button type="button" id="btnClearAssign" class="btn btn-secondary">割り当てをクリア</button>
+      </div>
+    </div></details>
+
+    <!-- 警告 -->
+    <details class="section-details panel-warnings" id="section-warnings"><summary>7. 警告</summary><div class="section-body">
+      
+      <div id="warningsList" class="warnings-list">
+        <p class="empty-msg">割り当て実行後に警告が表示されます。</p>
+      </div>
+    </div></details>
+
+    <!-- 結果：カレンダー -->
+    <details class="section-details" id="section-calendar"><summary>8. 割り当て結果（カレンダー）</summary><div class="section-body">
+      
+      <div id="calendarView" class="calendar-view"></div>
+    </div></details>
+
+    <!-- 結果：表 -->
+    <details class="section-details" id="section-result" open><summary>9. 割り当て結果（一覧）</summary><div class="section-body">
+      
+      <div class="table-wrap">
+        <p class="swipe-hint">一覧表がメインの結果表示です</p><table class="data-table" id="resultTable">
+          <thead>
+            <tr>
+              <th>日付</th>
+              <th>曜日</th>
+              <th>勤務種別</th>
+              <th>担当者</th>
+              <th>手動変更</th>
+            </tr>
+          </thead>
+          <tbody id="resultTableBody"></tbody>
+        </table>
+      </div>
+    </div></details>
+
+    <!-- 統計 -->
+    <details class="section-details" id="section-stats"><summary>10. 割り当て統計</summary><div class="section-body">
+      
+      <div class="table-wrap">
+        <table class="data-table" id="statsTable">
+          <thead>
+            <tr>
+              <th>メンバー</th>
+              <th>当直</th>
+              <th>日直</th>
+              <th>大輪番</th>
+              <th>合計</th>
+            </tr>
+          </thead>
+          <tbody id="statsTableBody"></tbody>
+        </table>
+      </div>
+    </div></details>
+
+    <!-- データ保存 -->
+    <details class="section-details" id="section-data"><summary>11. データ保存</summary><div class="section-body">
+      
+      <p class="hint">ブラウザの localStorage に自動保存されます。JSON でバックアップもできます。</p>
+      <div class="row btn-row">
+        <button type="button" id="btnExport" class="btn btn-secondary">JSONエクスポート</button>
+        <label class="btn btn-secondary file-label">
+          JSONインポート
+          <input type="file" id="btnImport" accept=".json,application/json" hidden>
+        </label>
+        <button type="button" id="btnSaveLocal" class="btn btn-secondary">手動で localStorage 保存</button>
+        <button type="button" id="btnResetAll" class="btn btn-danger">全データ初期化</button>
+      </div>
+      <p id="saveStatus" class="save-status"></p>
+    </div></details>
+  </main>
+
+  <footer class="app-footer">
+    <p>ローカルで動作します。外部サーバーへの通信は行いません。</p>
+  </footer>
+
+  <!-- 勤務枠追加ダイアログ（簡易） -->
+  <dialog id="addSlotDialog">
+    <form method="dialog" id="addSlotForm">
+      <h3>勤務枠を追加</h3>
+      <label>
+        日付
+        <input type="date" id="newSlotDate" required>
+      </label>
+      <label>
+        勤務種別
+        <select id="newSlotType">
+          <option value="night">当直</option>
+          <option value="day">日直</option>
+        </select>
+      </label>
+      <label class="checkbox-label">
+        <input type="checkbox" id="newSlotMajor">
+        大輪番に含める
+      </label>
+      <div class="dialog-buttons">
+        <button type="submit" class="btn btn-primary">追加</button>
+        <button type="button" id="btnCancelAddSlot" class="btn btn-secondary">キャンセル</button>
+      </div>
+    </form>
+  </dialog>
+
+<script>
+/**
+ * 当直・日直 自動振り分けツール
+ * =================================
+ * HTML + CSS + JavaScript のみで動作するローカルWebアプリです。
+ * ロジックは関数ごとに分けており、後からルールを追加しやすい構成にしています。
+ */
+
+// ========================================
+// 定数・設定
+// ========================================
+
+/** デフォルトのメンバー一覧 */
+const DEFAULT_MEMBERS = [
+  "田中", "岩崎", "山上", "井上", "重松", "木本", "山田", "吉村", "草薙"
+];
+
+/** 対象期間の開始（2026年4月） */
+const PERIOD_START = { year: 2026, month: 4 };
+
+/** 対象期間の終了（2028年3月） */
+const PERIOD_END = { year: 2028, month: 3 };
+
+/** 曜日ラベル（日曜始まり） */
+const WEEKDAY_LABELS = ["日", "月", "火", "水", "木", "金", "土"];
+
+/** 勤務種別 */
+const DUTY_TYPES = {
+  night: { label: "当直", category: "night" },
+  day: { label: "日直", category: "day" }
+};
+
+/** localStorage のキー名 */
+const STORAGE_KEY = "dutySchedulerData_v1";
+
+/** 希望の記号（将来 LINE 取り込みでも同じ値を使えるように定義） */
+const PREF = {
+  OK: "○",       // 勤務可能
+  MAYBE: "△",    // 次点
+  NG: "✕",       // 不可
+  EMPTY: ""      // 未入力
+};
+
+// ========================================
+// アプリ全体の状態
+// ========================================
+
+/** @type {AppState} */
+let appState = createInitialState();
+
+/** 現在表示中の年月キー（例: "2026-04"） */
+let currentMonthKey = "2026-04";
+
+// ========================================
+// 日付ユーティリティ
+// ========================================
+
+/**
+ * 年月キーを生成（例: 2026, 4 → "2026-04"）
+ */
+function toMonthKey(year, month) {
+  return `${year}-${String(month).padStart(2, "0")}`;
+}
+
+/**
+ * 年月キーを分解
+ */
+function parseMonthKey(key) {
+  const [y, m] = key.split("-");
+  return { year: Number(y), month: Number(m) };
+}
+
+/**
+ * Date オブジェクトを "YYYY-MM-DD" 形式に変換
+ */
+function formatDateISO(date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+/**
+ * 文字列から Date を作る（ローカルタイム）
+ */
+function parseDateISO(iso) {
+  const [y, m, d] = iso.split("-").map(Number);
+  return new Date(y, m - 1, d);
+}
+
+/**
+ * 曜日番号を取得（0=日, 6=土）
+ */
+function getWeekday(iso) {
+  return parseDateISO(iso).getDay();
+}
+
+/**
+ * 曜日ラベルを取得
+ */
+function getWeekdayLabel(iso) {
+  return WEEKDAY_LABELS[getWeekday(iso)];
+}
+
+/**
+ * 対象期間内の年月キー一覧を生成
+ */
+function getAllMonthKeys() {
+  const keys = [];
+  let { year, month } = PERIOD_START;
+  while (year < PERIOD_END.year || (year === PERIOD_END.year && month <= PERIOD_END.month)) {
+    keys.push(toMonthKey(year, month));
+    month++;
+    if (month > 12) {
+      month = 1;
+      year++;
+    }
+  }
+  return keys;
+}
+
+/**
+ * 指定月の全日付（ISO文字列の配列）を取得
+ */
+function getDatesInMonth(year, month) {
+  const dates = [];
+  const lastDay = new Date(year, month, 0).getDate();
+  for (let d = 1; d <= lastDay; d++) {
+    dates.push(formatDateISO(new Date(year, month - 1, d)));
+  }
+  return dates;
+}
+
+/**
+ * 希望日程表に表示する日付（木・金・土 + 大輪番の日曜のみ）
+ */
+function getPreferenceDates(year, month, monthData) {
+  const dates = [];
+  getDatesInMonth(year, month).forEach((iso) => {
+    const wd = getWeekday(iso);
+    if (wd === 4 || wd === 5 || wd === 6) {
+      dates.push(iso);
+    }
+  });
+  const major = monthData.majorSunday;
+  if (major && !dates.includes(major)) {
+    dates.push(major);
+    dates.sort();
+  }
+  return dates;
+}
+
+/**
+ * 月を1つ戻す
+ */
+function prevMonthKey(key) {
+  const { year, month } = parseMonthKey(key);
+  if (month === 1) return toMonthKey(year - 1, 12);
+  return toMonthKey(year, month - 1);
+}
+
+/**
+ * ISO日付が属する週のキー（月曜始まり）を返す
+ * 同じ週判定に使う
+ */
+function getWeekKey(iso) {
+  const date = parseDateISO(iso);
+  const day = date.getDay();
+  // 月曜始まりに調整（日曜=0 → 6日前が週の開始）
+  const diff = day === 0 ? -6 : 1 - day;
+  const monday = new Date(date);
+  monday.setDate(date.getDate() + diff);
+  return formatDateISO(monday);
+}
+
+/**
+ * 2つの日付の差（日数）
+ */
+function daysBetween(iso1, iso2) {
+  const d1 = parseDateISO(iso1).getTime();
+  const d2 = parseDateISO(iso2).getTime();
+  return Math.round(Math.abs(d2 - d1) / (1000 * 60 * 60 * 24));
+}
+
+// ========================================
+// データ構造の生成
+// ========================================
+
+/**
+ * 初期状態を作る
+ */
+function createInitialState() {
+  return {
+    version: 1,
+    members: [...DEFAULT_MEMBERS],
+    months: {},
+    // 過去の割り当て履歴（直近3か月の公平性に使用）
+    assignmentHistory: {}
+  };
+}
+
+/**
+ * 1か月分のデータを初期化
+ */
+function createMonthData() {
+  return {
+    /** @type {Record<string, boolean>} メンバー名 → 参加するか */
+    activeMembers: {},
+    /**
+     * 希望日程
+     * preferences[メンバー名][日付ISO] = "○" | "△" | "✕" | ""
+     * 将来 LINE 取り込みでも同じ構造を使う
+     */
+    preferences: {},
+    /**
+     * 勤務枠
+     * @type {DutySlot[]}
+     */
+    dutySlots: [],
+    /** 大輪番の日曜（ISO日付 or 空文字） */
+    majorSunday: "",
+    /**
+     * 回数上限
+     * limits[メンバー名] = { night: number|null, day: number|null, major: number|null }
+     */
+    limits: {},
+    /**
+     * 割り当て結果
+     * assignments[slotId] = メンバー名
+     */
+    assignments: {}
+  };
+}
+
+/**
+ * 月データを取得（なければ作成）
+ */
+function getMonthData(key) {
+  if (!appState.months[key]) {
+    appState.months[key] = createMonthData();
+    initMonthDefaults(key);
+  }
+  return appState.months[key];
+}
+
+/**
+ * 月データのデフォルト値をセット
+ */
+function initMonthDefaults(key) {
+  const data = appState.months[key];
+  appState.members.forEach((name) => {
+    data.activeMembers[name] = true;
+    data.preferences[name] = data.preferences[name] || {};
+    data.limits[name] = data.limits[name] || { night: null, day: null, major: null };
+  });
+}
+
+/**
+ * 勤務枠1件のIDを生成
+ */
+function makeSlotId(date, type, index = 0) {
+  return `${date}_${type}_${index}`;
+}
+
+/**
+ * デフォルト勤務枠を生成（木・金・土当直 + 土日直）
+ */
+function generateDefaultDutySlots(year, month) {
+  const slots = [];
+  const dates = getDatesInMonth(year, month);
+
+  dates.forEach((iso) => {
+    const wd = getWeekday(iso);
+    if (wd === 4) {
+      // 木曜 → 当直
+      slots.push({
+        id: makeSlotId(iso, "night"),
+        date: iso,
+        type: "night",
+        isMajor: false
+      });
+    } else if (wd === 5) {
+      // 金曜 → 当直
+      slots.push({
+        id: makeSlotId(iso, "night"),
+        date: iso,
+        type: "night",
+        isMajor: false
+      });
+    } else if (wd === 6) {
+      // 土曜 → 当直 + 日直
+      slots.push({
+        id: makeSlotId(iso, "night"),
+        date: iso,
+        type: "night",
+        isMajor: false
+      });
+      slots.push({
+        id: makeSlotId(iso, "day"),
+        date: iso,
+        type: "day",
+        isMajor: false
+      });
+    }
+  });
+
+  return slots;
+}
+
+/**
+ * 大輪番の日曜が設定されていれば、3枠（日直×2 + 当直×1）を追加/更新
+ */
+function applyMajorSundaySlots(monthData) {
+  // 既存の大輪番枠を削除
+  monthData.dutySlots = monthData.dutySlots.filter((s) => !s.isMajor);
+
+  if (!monthData.majorSunday) return;
+
+  const iso = monthData.majorSunday;
+  // 日直2名
+  monthData.dutySlots.push({
+    id: makeSlotId(iso, "day", 0) + "_major",
+    date: iso,
+    type: "day",
+    isMajor: true
+  });
+  monthData.dutySlots.push({
+    id: makeSlotId(iso, "day", 1) + "_major",
+    date: iso,
+    type: "day",
+    isMajor: true
+  });
+  // 当直1名
+  monthData.dutySlots.push({
+    id: makeSlotId(iso, "night", 0) + "_major",
+    date: iso,
+    type: "night",
+    isMajor: true
+  });
+}
+
+/**
+ * 勤務枠を日付順にソート
+ */
+function sortDutySlots(slots) {
+  return [...slots].sort((a, b) => {
+    if (a.date !== b.date) return a.date.localeCompare(b.date);
+    // 同じ日: 日直 → 当直
+    if (a.type !== b.type) return a.type === "day" ? -1 : 1;
+    return a.id.localeCompare(b.id);
+  });
+}
+
+// ========================================
+// 希望日程の読み取り
+// ========================================
+
+/**
+ * メンバーの指定日の希望を取得
+ * 空欄は「基本的に可能」として PREF.OK と同等に扱う（割り当て時）
+ */
+function getPreference(monthData, member, date) {
+  const prefs = monthData.preferences[member];
+  if (!prefs || prefs[date] === undefined || prefs[date] === PREF.EMPTY) {
+    return PREF.EMPTY;
+  }
+  return prefs[date];
+}
+
+/**
+ * 割り当て可能か（絶対条件: ✕は不可）
+ */
+function isAssignable(monthData, member, date) {
+  if (!monthData.activeMembers[member]) return false;
+  const pref = getPreference(monthData, member, date);
+  return pref !== PREF.NG;
+}
+
+// ========================================
+// 履歴（直近3か月）の取得
+// ========================================
+
+/**
+ * 直近3か月の割り当て履歴を集計
+ * @returns {Record<string, { night: number, day: number, major: number }>}
+ */
+function getHistoryCounts(currentKey) {
+  const counts = {};
+  appState.members.forEach((m) => {
+    counts[m] = { night: 0, day: 0, major: 0 };
+  });
+
+  let key = prevMonthKey(currentKey);
+  for (let i = 0; i < 3; i++) {
+    const hist = appState.assignmentHistory[key];
+    if (hist) {
+      Object.entries(hist).forEach(([member, c]) => {
+        if (counts[member]) {
+          counts[member].night += c.night || 0;
+          counts[member].day += c.day || 0;
+          counts[member].major += c.major || 0;
+        }
+      });
+    }
+    key = prevMonthKey(key);
+  }
+  return counts;
+}
+
+/**
+ * 今月の割り当て結果を履歴用に集計
+ */
+function countAssignments(monthData) {
+  const counts = {};
+  appState.members.forEach((m) => {
+    counts[m] = { night: 0, day: 0, major: 0, total: 0 };
+  });
+
+  monthData.dutySlots.forEach((slot) => {
+    const member = monthData.assignments[slot.id];
+    if (!member) return;
+    if (!counts[member]) counts[member] = { night: 0, day: 0, major: 0, total: 0 };
+
+    if (slot.isMajor) {
+      counts[member].major++;
+    } else if (slot.type === "night") {
+      counts[member].night++;
+    } else {
+      counts[member].day++;
+    }
+    counts[member].total++;
+  });
+
+  return counts;
+}
+
+// ========================================
+// 自動割り当てロジック（コア部分）
+// ========================================
+
+/**
+ * スコアリング用の重み（後から調整しやすいよう定数化）
+ */
+const SCORE_WEIGHTS = {
+  PREF_OK: 30,
+  PREF_EMPTY: 10,
+  PREF_MAYBE: -40,
+  COUNT_PENALTY: 25,        // 今月すでに多いほど減点
+  HISTORY_PENALTY: 8,         // 直近3か月で多いほど減点
+  SAME_WEEK: -80,             // 同じ週に2回目
+  CONSECUTIVE_NIGHT: -60,     // 木金など近い当直
+  SLOT_TYPE_PENALTY: 15,      // 同種類の勤務が偏る
+  MAJOR_PENALTY: 20,
+  UNASSIGNED_BONUS: 100       // 未割当枠を埋める優先度
+};
+
+/**
+ * メインの自動割り当て関数
+ * @param {object} monthData
+ * @param {string} monthKey
+ * @returns {{ assignments: Record<string,string>, warnings: string[] }}
+ */
+function runAutoAssignment(monthData, monthKey) {
+  const slots = sortDutySlots(monthData.dutySlots);
+  const assignments = {};
+  const activeMembers = appState.members.filter((m) => monthData.activeMembers[m]);
+
+  // 作業用カウンタ
+  const monthCounts = {};
+  activeMembers.forEach((m) => {
+    monthCounts[m] = { night: 0, day: 0, major: 0, total: 0 };
+  });
+
+  const historyCounts = getHistoryCounts(monthKey);
+
+  // メンバーごとに割り当て済み日・週を記録
+  const assignedDates = {};   // member → Set of dates
+  const assignedWeeks = {};   // member → Set of weekKeys
+  const assignedSlots = {};   // member → slot[]
+
+  activeMembers.forEach((m) => {
+    assignedDates[m] = new Set();
+    assignedWeeks[m] = new Set();
+    assignedSlots[m] = [];
+  });
+
+  // 候補が少ない枠から先に埋める（難しい枠優先）
+  const orderedSlots = [...slots].sort((a, b) => {
+    const ca = countCandidates(monthData, a, activeMembers);
+    const cb = countCandidates(monthData, b, activeMembers);
+    return ca - cb;
+  });
+
+  const warnings = [];
+
+  orderedSlots.forEach((slot) => {
+    const candidates = getCandidates(
+      monthData, slot, activeMembers, assignments, assignedDates, assignedWeeks
+    );
+
+    if (candidates.length === 0) {
+      warnings.push(`未割当: ${slot.date}（${getWeekdayLabel(slot.date)}）${getSlotLabel(slot)} — 候補者がいません`);
+      return;
+    }
+
+    // 各候補者のスコアを計算
+    const scored = candidates.map((member) => ({
+      member,
+      score: scoreCandidate(
+        member, slot, monthData, monthCounts, historyCounts,
+        assignedDates, assignedWeeks, assignedSlots, activeMembers
+      )
+    }));
+
+    scored.sort((a, b) => b.score - a.score);
+
+    const chosen = scored[0].member;
+    assignments[slot.id] = chosen;
+
+    // カウンタ更新
+    if (slot.isMajor) monthCounts[chosen].major++;
+    else if (slot.type === "night") monthCounts[chosen].night++;
+    else monthCounts[chosen].day++;
+    monthCounts[chosen].total++;
+
+    assignedDates[chosen].add(slot.date);
+    assignedWeeks[chosen].add(getWeekKey(slot.date));
+    assignedSlots[chosen].push(slot);
+  });
+
+  return { assignments, warnings };
+}
+
+/**
+ * 候補者数を数える（ソート用）
+ */
+function countCandidates(monthData, slot, activeMembers) {
+  return activeMembers.filter((m) => isAssignable(monthData, m, slot.date)).length;
+}
+
+/**
+ * 絶対条件を満たす候補者リスト
+ */
+function getCandidates(monthData, slot, activeMembers, assignments, assignedDates, assignedWeeks) {
+  return activeMembers.filter((member) => {
+    // 絶対条件1: ✕不可
+    if (!isAssignable(monthData, member, slot.date)) return false;
+
+    // 絶対条件2: 参加メンバーのみ（activeMembers で既にフィルタ）
+
+    // 絶対条件3: 同じ枠に重複なし（1枠1人なので自動的にOK）
+
+    // 同じ日に同じ人を別枠に入れない（日直+当直など同日2枠は別人）
+    if (assignedDates[member] && assignedDates[member].has(slot.date)) return false;
+
+    return true;
+  });
+}
+
+/**
+ * 候補者のスコアを計算（高いほど選ばれやすい）
+ * 努力条件はスコアの加减で反映
+ */
+function scoreCandidate(
+  member, slot, monthData, monthCounts, historyCounts,
+  assignedDates, assignedWeeks, assignedSlots, activeMembers
+) {
+  let score = 100;
+
+  // 努力条件3: 希望優先
+  const pref = getPreference(monthData, member, slot.date);
+  if (pref === PREF.OK) score += SCORE_WEIGHTS.PREF_OK;
+  else if (pref === PREF.EMPTY) score += SCORE_WEIGHTS.PREF_EMPTY;
+  else if (pref === PREF.MAYBE) score += SCORE_WEIGHTS.PREF_MAYBE;
+
+  // 努力条件1,2: 今月の回数均等化
+  const category = slot.isMajor ? "major" : slot.type;
+  const myCount = monthCounts[member][category];
+  const allCounts = activeMembers.map((m) => monthCounts[m][category]);
+  const avg = allCounts.reduce((a, b) => a + b, 0) / (activeMembers.length || 1);
+  score -= (myCount - avg) * SCORE_WEIGHTS.COUNT_PENALTY;
+
+  // 努力条件4: 直近3か月の履歴
+  const hist = historyCounts[member] || { night: 0, day: 0, major: 0 };
+  score -= (hist[category] || 0) * SCORE_WEIGHTS.HISTORY_PENALTY;
+
+  // 絶対条件5（努力）: 同じ週2回目を避ける
+  const weekKey = getWeekKey(slot.date);
+  if (assignedWeeks[member] && assignedWeeks[member].has(weekKey)) {
+    score += SCORE_WEIGHTS.SAME_WEEK;
+  }
+
+  // 絶対条件4（努力）: 近い勤務（木→金、金→土など）
+  if (hasNearbyAssignment(member, slot, assignedSlots[member] || [])) {
+    score += SCORE_WEIGHTS.CONSECUTIVE_NIGHT;
+  }
+
+  // 努力条件5: 勤務種別の偏り
+  score -= monthCounts[member].total * 5;
+
+  // 上限チェック（オプション）
+  const limits = monthData.limits[member] || {};
+  const limitKey = slot.isMajor ? "major" : slot.type;
+  const limit = limits[limitKey];
+  if (limit !== null && limit !== undefined && limit !== "") {
+    const numLimit = Number(limit);
+    if (!isNaN(numLimit) && monthCounts[member][category] >= numLimit) {
+      score -= 200; // 上限超えそうなら大幅減点
+    }
+  }
+
+  // ランダム性を少量加え、同点時の偏りを防ぐ
+  score += Math.random() * 3;
+
+  return score;
+}
+
+/**
+ * 近すぎる勤務があるか（1〜2日以内に当直/日直あり）
+ */
+function hasNearbyAssignment(member, slot, memberSlots) {
+  for (const s of memberSlots) {
+    const diff = daysBetween(s.date, slot.date);
+    if (diff === 0) continue;
+    if (diff <= 2) {
+      // 当直同士、または当直と日直が近い
+      if (s.type === "night" || slot.type === "night") return true;
+    }
+    // 木曜当直→金曜当直パターン
+    if (diff === 1) {
+      const wd1 = getWeekday(s.date);
+      const wd2 = getWeekday(slot.date);
+      if ((wd1 === 4 && wd2 === 5) || (wd1 === 5 && wd2 === 4)) return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * 勤務枠の表示ラベル
+ */
+function getSlotLabel(slot) {
+  const typeLabel = DUTY_TYPES[slot.type]?.label || slot.type;
+  return slot.isMajor ? `${typeLabel}（大輪番）` : typeLabel;
+}
+
+// ========================================
+// 割り当て後の警告チェック
+// ========================================
+
+/**
+ * 割り当て結果を検証し、警告リストを返す
+ */
+function validateAssignments(monthData, monthKey) {
+  const warnings = [];
+  const slots = monthData.dutySlots;
+  const assignments = monthData.assignments;
+
+  // メンバーごとの割り当て記録
+  const byMember = {};
+  appState.members.forEach((m) => {
+    byMember[m] = [];
+  });
+
+  slots.forEach((slot) => {
+    const member = assignments[slot.id];
+
+    if (!member) {
+      warnings.push({
+        level: "error",
+        text: `未割当の勤務枠: ${slot.date}（${getWeekdayLabel(slot.date)}）${getSlotLabel(slot)}`
+      });
+      return;
+    }
+
+    byMember[member].push(slot);
+
+    // ✕の日に割り当て
+    const pref = getPreference(monthData, member, slot.date);
+    if (pref === PREF.NG) {
+      warnings.push({
+        level: "error",
+        text: `✕の日に割り当て: ${member} → ${slot.date}（${getWeekdayLabel(slot.date)}）${getSlotLabel(slot)}`
+      });
+    }
+
+    // △の日に割り当て
+    if (pref === PREF.MAYBE) {
+      warnings.push({
+        level: "warn",
+        text: `△の日に割り当て: ${member} → ${slot.date}（${getWeekdayLabel(slot.date)}）${getSlotLabel(slot)}`
+      });
+    }
+
+    // 参加外メンバー
+    if (!monthData.activeMembers[member]) {
+      warnings.push({
+        level: "error",
+        text: `参加外メンバーに割り当て: ${member} → ${slot.date}`
+      });
+    }
+  });
+
+  // メンバーごとのチェック
+  Object.entries(byMember).forEach(([member, memberSlots]) => {
+    if (memberSlots.length === 0) return;
+
+    // 同じ週2回
+    const weeks = {};
+    memberSlots.forEach((s) => {
+      const wk = getWeekKey(s.date);
+      weeks[wk] = (weeks[wk] || 0) + 1;
+    });
+    Object.entries(weeks).forEach(([wk, count]) => {
+      if (count >= 2) {
+        warnings.push({
+          level: "warn",
+          text: `同じ週に2回勤務: ${member}（週開始: ${wk}）`
+        });
+      }
+    });
+
+    // 連続勤務
+    const sorted = [...memberSlots].sort((a, b) => a.date.localeCompare(b.date));
+    for (let i = 1; i < sorted.length; i++) {
+      const diff = daysBetween(sorted[i - 1].date, sorted[i].date);
+      if (diff <= 2 && (sorted[i - 1].type === "night" || sorted[i].type === "night")) {
+        warnings.push({
+          level: "warn",
+          text: `近い日に勤務: ${member} — ${sorted[i - 1].date} と ${sorted[i].date}`
+        });
+      }
+      const wd1 = getWeekday(sorted[i - 1].date);
+      const wd2 = getWeekday(sorted[i].date);
+      if (diff === 1 && ((wd1 === 4 && wd2 === 5) || (wd1 === 5 && wd2 === 4))) {
+        warnings.push({
+          level: "warn",
+          text: `木金連続当直の可能性: ${member} — ${sorted[i - 1].date} と ${sorted[i].date}`
+        });
+      }
+    }
+  });
+
+  // 偏りチェック
+  const counts = countAssignments(monthData);
+  const active = appState.members.filter((m) => monthData.activeMembers[m]);
+  if (active.length > 0) {
+    const totals = active.map((m) => counts[m]?.total || 0);
+    const max = Math.max(...totals);
+    const min = Math.min(...totals);
+    if (max - min >= 3) {
+      warnings.push({
+        level: "info",
+        text: `勤務回数の偏り: 最多 ${max} 回 / 最少 ${min} 回（差 ${max - min}）`
+      });
+    }
+  }
+
+  return warnings;
+}
+
+// ========================================
+// localStorage / JSON 保存
+// ========================================
+
+function saveToLocalStorage() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+    return true;
+  } catch (e) {
+    console.error("保存失敗:", e);
+    return false;
+  }
+}
+
+function loadFromLocalStorage() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return false;
+    const parsed = JSON.parse(raw);
+    appState = mergeState(createInitialState(), parsed);
+    return true;
+  } catch (e) {
+    console.error("読み込み失敗:", e);
+    return false;
+  }
+}
+
+/**
+ * 保存データをマージ（新しいメンバー追加などに対応）
+ */
+function mergeState(base, saved) {
+  const merged = { ...base, ...saved };
+  merged.members = saved.members || base.members;
+  merged.months = saved.months || {};
+  merged.assignmentHistory = saved.assignmentHistory || {};
+  return merged;
+}
+
+function exportJSON() {
+  const blob = new Blob([JSON.stringify(appState, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `duty-scheduler-${currentMonthKey}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importJSON(file) {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const parsed = JSON.parse(e.target.result);
+      appState = mergeState(createInitialState(), parsed);
+      saveToLocalStorage();
+      loadMonthUI(currentMonthKey);
+      showSaveStatus("JSONをインポートしました");
+    } catch (err) {
+      alert("JSONの読み込みに失敗しました: " + err.message);
+    }
+  };
+  reader.readAsText(file);
+}
+
+/**
+ * 割り当て完了後、履歴を更新
+ */
+function updateAssignmentHistory(monthKey, monthData) {
+  const counts = countAssignments(monthData);
+  const hist = {};
+  Object.entries(counts).forEach(([member, c]) => {
+    if (c.total > 0) {
+      hist[member] = { night: c.night, day: c.day, major: c.major };
+    }
+  });
+  appState.assignmentHistory[monthKey] = hist;
+}
+
+// ========================================
+// UI 描画
+// ========================================
+
+function initUI() {
+  // 年月セレクトを生成
+  const select = document.getElementById("yearMonth");
+  getAllMonthKeys().forEach((key) => {
+    const { year, month } = parseMonthKey(key);
+    const opt = document.createElement("option");
+    opt.value = key;
+    opt.textContent = `${year}年${month}月`;
+    select.appendChild(opt);
+  });
+  select.value = currentMonthKey;
+
+  // イベント登録
+  document.getElementById("btnLoadMonth").addEventListener("click", () => {
+    currentMonthKey = select.value;
+    loadMonthUI(currentMonthKey);
+  });
+
+  select.addEventListener("change", () => {
+    saveCurrentMonthFromUI();
+    currentMonthKey = select.value;
+    loadMonthUI(currentMonthKey);
+  });
+
+  document.getElementById("btnGenerateDefaultSlots").addEventListener("click", onGenerateDefaultSlots);
+  document.getElementById("btnAddSlot").addEventListener("click", onAddSlotClick);
+  document.getElementById("btnCancelAddSlot").addEventListener("click", () => {
+    document.getElementById("addSlotDialog").close();
+  });
+  document.getElementById("addSlotForm").addEventListener("submit", onAddSlotSubmit);
+
+  document.getElementById("majorSunday").addEventListener("change", onMajorSundayChange);
+
+  document.getElementById("btnAssign").addEventListener("click", onRunAssignment);
+  document.getElementById("btnClearAssign").addEventListener("click", onClearAssignment);
+
+  document.getElementById("btnExport").addEventListener("click", exportJSON);
+  document.getElementById("btnImport").addEventListener("change", (e) => {
+    if (e.target.files[0]) importJSON(e.target.files[0]);
+    e.target.value = "";
+  });
+  document.getElementById("btnSaveLocal").addEventListener("click", () => {
+    saveCurrentMonthFromUI();
+    if (saveToLocalStorage()) showSaveStatus("localStorage に保存しました");
+  });
+  document.getElementById("btnResetAll").addEventListener("click", () => {
+    if (confirm("すべてのデータを削除して初期化します。よろしいですか？")) {
+      appState = createInitialState();
+      localStorage.removeItem(STORAGE_KEY);
+      loadMonthUI(currentMonthKey);
+      showSaveStatus("初期化しました");
+    }
+  });
+}
+
+/**
+ * 指定月のUIをすべて描画
+ */
+function loadMonthUI(monthKey) {
+  currentMonthKey = monthKey;
+  document.getElementById("yearMonth").value = monthKey;
+
+  const data = getMonthData(monthKey);
+  const { year, month } = parseMonthKey(monthKey);
+
+  // 勤務枠が空ならデフォルト生成
+  if (data.dutySlots.filter((s) => !s.isMajor).length === 0) {
+    data.dutySlots = generateDefaultDutySlots(year, month);
+  }
+  // 保存済みの大輪番設定があれば枠を反映
+  applyMajorSundaySlots(data);
+
+  renderMemberCheckboxes(data);
+  renderMajorSundaySelect(year, month, data);
+  renderSlotsTable(data);
+  renderLimitsTable(data);
+  renderPreferenceTable(year, month, data);
+  renderResults(data, year, month);
+  renderWarnings([]);
+
+  showSaveStatus("");
+}
+
+function renderMemberCheckboxes(data) {
+  const container = document.getElementById("memberCheckboxes");
+  container.innerHTML = "";
+
+  appState.members.forEach((name) => {
+    const label = document.createElement("label");
+    const cb = document.createElement("input");
+    cb.type = "checkbox";
+    cb.checked = data.activeMembers[name] !== false;
+    cb.dataset.member = name;
+    cb.addEventListener("change", () => {
+      data.activeMembers[name] = cb.checked;
+      autoSave();
+    });
+    label.appendChild(cb);
+    label.appendChild(document.createTextNode(name));
+    container.appendChild(label);
+  });
+}
+
+function renderMajorSundaySelect(year, month, data) {
+  const select = document.getElementById("majorSunday");
+  select.innerHTML = '<option value="">（未設定）</option>';
+
+  getDatesInMonth(year, month).forEach((iso) => {
+    if (getWeekday(iso) === 0) {
+      const opt = document.createElement("option");
+      opt.value = iso;
+      opt.textContent = `${iso}（日）`;
+      select.appendChild(opt);
+    }
+  });
+
+  select.value = data.majorSunday || "";
+}
+
+function renderSlotsTable(data) {
+  const tbody = document.getElementById("slotsTableBody");
+  tbody.innerHTML = "";
+
+  sortDutySlots(data.dutySlots).forEach((slot) => {
+    const tr = document.createElement("tr");
+
+    tr.innerHTML = `
+      <td>${slot.date}</td>
+      <td>${getWeekdayLabel(slot.date)}</td>
+      <td>
+        <select class="slot-type-select" data-id="${slot.id}">
+          <option value="night" ${slot.type === "night" ? "selected" : ""}>当直</option>
+          <option value="day" ${slot.type === "day" ? "selected" : ""}>日直</option>
+        </select>
+      </td>
+      <td>${slot.isMajor ? "★" : ""}</td>
+      <td><button type="button" class="btn btn-small btn-danger slot-delete" data-id="${slot.id}">削除</button></td>
+    `;
+
+    tbody.appendChild(tr);
+  });
+
+  tbody.querySelectorAll(".slot-type-select").forEach((sel) => {
+    sel.addEventListener("change", (e) => {
+      const slot = data.dutySlots.find((s) => s.id === e.target.dataset.id);
+      if (slot) {
+        slot.type = e.target.value;
+        autoSave();
+      }
+    });
+  });
+
+  tbody.querySelectorAll(".slot-delete").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      const id = e.target.dataset.id;
+      data.dutySlots = data.dutySlots.filter((s) => s.id !== id);
+      delete data.assignments[id];
+      renderSlotsTable(data);
+      autoSave();
+    });
+  });
+}
+
+function renderLimitsTable(data) {
+  const tbody = document.getElementById("limitsTableBody");
+  tbody.innerHTML = "";
+
+  appState.members.forEach((name) => {
+    if (!data.activeMembers[name] && data.activeMembers[name] !== undefined && !data.activeMembers[name]) {
+      // 非参加も表示（薄く）
+    }
+    const lim = data.limits[name] || { night: null, day: null, major: null };
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${name}</td>
+      <td><input type="number" min="0" class="limit-input" data-member="${name}" data-type="night" value="${lim.night ?? ""}" placeholder="自動"></td>
+      <td><input type="number" min="0" class="limit-input" data-member="${name}" data-type="day" value="${lim.day ?? ""}" placeholder="自動"></td>
+      <td><input type="number" min="0" class="limit-input" data-member="${name}" data-type="major" value="${lim.major ?? ""}" placeholder="自動"></td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  tbody.querySelectorAll(".limit-input").forEach((input) => {
+    input.addEventListener("change", (e) => {
+      const member = e.target.dataset.member;
+      const type = e.target.dataset.type;
+      if (!data.limits[member]) data.limits[member] = { night: null, day: null, major: null };
+      const val = e.target.value === "" ? null : Number(e.target.value);
+      data.limits[member][type] = val;
+      autoSave();
+    });
+  });
+}
+
+function renderPreferenceTable(year, month, data) {
+  const dates = getPreferenceDates(year, month, data);
+  const thead = document.getElementById("prefTableHead");
+  const tbody = document.getElementById("prefTableBody");
+
+  // ヘッダ行
+  thead.innerHTML = "";
+  const headRow = document.createElement("tr");
+  headRow.innerHTML = `<th>メンバー</th>`;
+  dates.forEach((iso) => {
+    const th = document.createElement("th");
+    th.textContent = `${parseDateISO(iso).getDate()}(${getWeekdayLabel(iso)})`;
+    th.title = iso;
+    headRow.appendChild(th);
+  });
+  thead.appendChild(headRow);
+
+  // データ行
+  tbody.innerHTML = "";
+  appState.members.forEach((name) => {
+    const tr = document.createElement("tr");
+    const nameTd = document.createElement("td");
+    nameTd.textContent = name;
+    tr.appendChild(nameTd);
+
+    if (!data.preferences[name]) data.preferences[name] = {};
+
+    dates.forEach((iso) => {
+      const td = document.createElement("td");
+      const select = document.createElement("select");
+      select.className = "pref-select";
+      select.dataset.member = name;
+      select.dataset.date = iso;
+
+      const options = [
+        { value: PREF.EMPTY, label: "—" },
+        { value: PREF.OK, label: "〇" },
+        { value: PREF.MAYBE, label: "△" },
+        { value: PREF.NG, label: "✕" },
+      ];
+      const current = data.preferences[name][iso] || PREF.EMPTY;
+      options.forEach((opt) => {
+        const o = document.createElement("option");
+        o.value = opt.value;
+        o.textContent = opt.label;
+        if (current === opt.value) o.selected = true;
+        select.appendChild(o);
+      });
+
+      select.addEventListener("change", (e) => {
+        data.preferences[name][iso] = e.target.value;
+        autoSave();
+      });
+
+      td.appendChild(select);
+      tr.appendChild(td);
+    });
+    tbody.appendChild(tr);
+  });
+}
+
+function renderResults(data, year, month) {
+  renderCalendar(data, year, month);
+  renderResultTable(data);
+  renderStatsTable(data);
+}
+
+function renderCalendar(data, year, month) {
+  const container = document.getElementById("calendarView");
+  container.innerHTML = "";
+
+  // 曜日ヘッダ
+  WEEKDAY_LABELS.forEach((label) => {
+    const h = document.createElement("div");
+    h.className = "cal-header";
+    h.textContent = label;
+    container.appendChild(h);
+  });
+
+  const firstDay = new Date(year, month - 1, 1);
+  const lastDay = new Date(year, month, 0).getDate();
+  const startWd = firstDay.getDay();
+
+  // 前月の空白
+  for (let i = 0; i < startWd; i++) {
+    const cell = document.createElement("div");
+    cell.className = "cal-cell other-month";
+    container.appendChild(cell);
+  }
+
+  for (let d = 1; d <= lastDay; d++) {
+    const iso = formatDateISO(new Date(year, month - 1, d));
+    const cell = document.createElement("div");
+    cell.className = "cal-cell";
+
+    const num = document.createElement("div");
+    num.className = "cal-date-num";
+    num.textContent = `${d}(${getWeekdayLabel(iso)})`;
+    cell.appendChild(num);
+
+    const daySlots = sortDutySlots(data.dutySlots.filter((s) => s.date === iso));
+    daySlots.forEach((slot) => {
+      const member = data.assignments[slot.id];
+      const div = document.createElement("div");
+      div.className = "cal-duty";
+
+      if (slot.isMajor) div.classList.add("cal-duty-major");
+      else if (slot.type === "night") div.classList.add("cal-duty-night");
+      else div.classList.add("cal-duty-day");
+
+      if (!member) {
+        div.classList.add("cal-duty-unassigned");
+        div.textContent = `${getSlotLabel(slot)}: 未割当`;
+      } else {
+        div.textContent = `${getSlotLabel(slot)}: ${member}`;
+      }
+      cell.appendChild(div);
+    });
+
+    container.appendChild(cell);
+  }
+}
+
+function renderResultTable(data) {
+  const tbody = document.getElementById("resultTableBody");
+  tbody.innerHTML = "";
+
+  const activeMembers = appState.members.filter((m) => data.activeMembers[m]);
+
+  sortDutySlots(data.dutySlots).forEach((slot) => {
+    const tr = document.createElement("tr");
+    const member = data.assignments[slot.id] || "";
+
+    const select = document.createElement("select");
+    select.className = "member-select";
+    select.dataset.slotId = slot.id;
+
+    const emptyOpt = document.createElement("option");
+    emptyOpt.value = "";
+    emptyOpt.textContent = "（未割当）";
+    select.appendChild(emptyOpt);
+
+    activeMembers.forEach((m) => {
+      const opt = document.createElement("option");
+      opt.value = m;
+      opt.textContent = m;
+      if (m === member) opt.selected = true;
+      select.appendChild(opt);
+    });
+
+    select.addEventListener("change", (e) => {
+      const id = e.target.dataset.slotId;
+      if (e.target.value) data.assignments[id] = e.target.value;
+      else delete data.assignments[id];
+      const { year, month } = parseMonthKey(currentMonthKey);
+      renderResults(data, year, month);
+      renderWarnings(validateAssignments(data, currentMonthKey));
+      autoSave();
+    });
+
+    tr.innerHTML = `
+      <td>${slot.date}</td>
+      <td>${getWeekdayLabel(slot.date)}</td>
+      <td>${getSlotLabel(slot)}</td>
+      <td>${member || '<span style="color:#dc2626">未割当</span>'}</td>
+      <td></td>
+    `;
+    tr.lastElementChild.appendChild(select);
+    tbody.appendChild(tr);
+  });
+}
+
+function renderStatsTable(data) {
+  const tbody = document.getElementById("statsTableBody");
+  tbody.innerHTML = "";
+  const counts = countAssignments(data);
+
+  appState.members.forEach((name) => {
+    if (!data.activeMembers[name]) return;
+    const c = counts[name] || { night: 0, day: 0, major: 0, total: 0 };
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${name}</td>
+      <td>${c.night}</td>
+      <td>${c.day}</td>
+      <td>${c.major}</td>
+      <td>${c.total}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function renderWarnings(warnings) {
+  const container = document.getElementById("warningsList");
+  container.innerHTML = "";
+
+  if (warnings.length === 0) {
+    container.innerHTML = '<p class="empty-msg">警告はありません。</p>';
+    return;
+  }
+
+  const ul = document.createElement("ul");
+  ul.className = "warnings-list";
+
+  warnings.forEach((w) => {
+    const li = document.createElement("li");
+    const level = typeof w === "string" ? "warn" : w.level;
+    const text = typeof w === "string" ? w : w.text;
+    li.className = `warning-item warning-${level === "error" ? "error" : level === "info" ? "info" : "warn"}`;
+    li.textContent = text;
+    ul.appendChild(li);
+  });
+
+  container.appendChild(ul);
+}
+
+function showSaveStatus(msg) {
+  document.getElementById("saveStatus").textContent = msg;
+}
+
+function autoSave() {
+  saveToLocalStorage();
+}
+
+function saveCurrentMonthFromUI() {
+  const data = getMonthData(currentMonthKey);
+  data.majorSunday = document.getElementById("majorSunday").value;
+}
+
+// ========================================
+// イベントハンドラ
+// ========================================
+
+function onGenerateDefaultSlots() {
+  const { year, month } = parseMonthKey(currentMonthKey);
+  const data = getMonthData(currentMonthKey);
+  data.dutySlots = generateDefaultDutySlots(year, month);
+  applyMajorSundaySlots(data);
+  data.assignments = {};
+  renderSlotsTable(data);
+  const { year: y, month: m } = parseMonthKey(currentMonthKey);
+  renderResults(data, y, m);
+  autoSave();
+}
+
+function onAddSlotClick() {
+  const dialog = document.getElementById("addSlotDialog");
+  const { year, month } = parseMonthKey(currentMonthKey);
+  document.getElementById("newSlotDate").value = formatDateISO(new Date(year, month - 1, 1));
+  document.getElementById("newSlotType").value = "night";
+  document.getElementById("newSlotMajor").checked = false;
+  dialog.showModal();
+}
+
+function onAddSlotSubmit(e) {
+  e.preventDefault();
+  const data = getMonthData(currentMonthKey);
+  const date = document.getElementById("newSlotDate").value;
+  const type = document.getElementById("newSlotType").value;
+  const isMajor = document.getElementById("newSlotMajor").checked;
+
+  const existing = data.dutySlots.filter((s) => s.date === date && s.type === type && s.isMajor === isMajor);
+  const id = makeSlotId(date, type, existing.length) + (isMajor ? "_major" : "");
+
+  data.dutySlots.push({ id, date, type, isMajor });
+  renderSlotsTable(data);
+  document.getElementById("addSlotDialog").close();
+  autoSave();
+}
+
+function onMajorSundayChange() {
+  const data = getMonthData(currentMonthKey);
+  data.majorSunday = document.getElementById("majorSunday").value;
+  applyMajorSundaySlots(data);
+  renderSlotsTable(data);
+  const { year, month } = parseMonthKey(currentMonthKey);
+  renderPreferenceTable(year, month, data);
+  autoSave();
+}
+
+function onRunAssignment() {
+  saveCurrentMonthFromUI();
+  const data = getMonthData(currentMonthKey);
+
+  // 大輪番枠を最新化
+  applyMajorSundaySlots(data);
+
+  const result = runAutoAssignment(data, currentMonthKey);
+  data.assignments = result.assignments;
+
+  const validationWarnings = validateAssignments(data, currentMonthKey);
+  const allWarnings = [...result.warnings.map((t) => ({ level: "error", text: t })), ...validationWarnings];
+
+  renderWarnings(allWarnings);
+
+  const { year, month } = parseMonthKey(currentMonthKey);
+  renderResults(data, year, month);
+
+  updateAssignmentHistory(currentMonthKey, data);
+  autoSave();
+
+  showSaveStatus("自動割り当てを実行しました");
+}
+
+function onClearAssignment() {
+  const data = getMonthData(currentMonthKey);
+  data.assignments = {};
+  renderWarnings([]);
+  const { year, month } = parseMonthKey(currentMonthKey);
+  renderResults(data, year, month);
+  autoSave();
+}
+
+// ========================================
+// 起動
+// ========================================
+
+document.addEventListener("DOMContentLoaded", () => {
+  loadFromLocalStorage();
+  initUI();
+  loadMonthUI(currentMonthKey);
+});
+
+</script>
+</body>
+</html>
