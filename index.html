@@ -488,13 +488,20 @@ dialog { width: calc(100vw - 2rem); max-width: 400px; }
 #yearMonth, #majorSunday { min-height: 44px; font-size: 1rem; }
 .limit-input { min-height: 44px; font-size: 1rem; }
 .panel-warnings { border-left: 4px solid var(--color-warning-border); padding-left: 0.5rem; }
+.gas-url-label { display: block; margin-bottom: 0.75rem; font-size: 0.9rem; }
+.gas-url-input {
+  display: block; width: 100%; margin-top: 0.35rem; padding: 0.65rem;
+  min-height: 44px; font-size: 0.85rem; border: 1px solid var(--color-border); border-radius: 6px;
+}
+.cloud-status { font-size: 0.85rem; color: var(--color-primary); min-height: 1.2em; }
+.section-divider { border: none; border-top: 1px solid var(--color-border); margin: 1rem 0; }
 
 </style>
 </head>
 <body>
   <header class="app-header">
     <h1>当直・日直 自動振り分け <small style="font-size:0.65em">スマホ版</small></h1>
-    <p class="subtitle">試用</p>
+    <p class="subtitle">1ファイルで動作。LINEで送ってスマホから開けます</p>
   </header>
 
   <main class="container">
@@ -535,7 +542,7 @@ dialog { width: calc(100vw - 2rem); max-width: 400px; }
       </div>
 
       <div class="table-wrap">
-        <p class="swipe-hint">スワイプ可能</p><table class="data-table" id="slotsTable">
+        <p class="swipe-hint">表は横にスワイプできます</p><table class="data-table" id="slotsTable">
           <thead>
             <tr>
               <th>日付</th>
@@ -553,9 +560,9 @@ dialog { width: calc(100vw - 2rem); max-width: 400px; }
     <!-- 回数上限 -->
     <details class="section-details" id="section-limits"><summary>4. 回数上限（任意）</summary><div class="section-body">
       
-      <p class="hint">未入力の場合は自動で均等化します。数字は上限として扱います。</p>
+      <p class="hint">未入力の場合は自動で均等化します。数字を入れると上限として扱います。</p>
       <div class="table-wrap">
-        <p class="swipe-hint">スワイプ可能</p><table class="data-table" id="limitsTable">
+        <p class="swipe-hint">表は横にスワイプできます</p><table class="data-table" id="limitsTable">
           <thead>
             <tr>
               <th>メンバー</th>
@@ -573,7 +580,7 @@ dialog { width: calc(100vw - 2rem); max-width: 400px; }
     <details class="section-details" id="section-preferences" open><summary>5. 希望日程の入力</summary><div class="section-body">
       
       <p class="hint">
-         〇（可能）／△（次点）／✕（不可）／—（未入力・基本は可能）を選んでください。
+        木・金・土および大輪番の日曜のみ表示されます。プルダウンで 〇（可能）／△（次点）／✕（不可）／—（未入力・基本は可能）を選んでください。
       </p>
       <div class="pref-legend">
         <span class="pref-o">〇</span> 可能
@@ -650,9 +657,22 @@ dialog { width: calc(100vw - 2rem); max-width: 400px; }
     </div></details>
 
     <!-- データ保存 -->
-    <details class="section-details" id="section-data"><summary>11. データ保存</summary><div class="section-body">
-      
-      <p class="hint">ブラウザの localStorage に自動保存されます。JSON でバックアップもできます。</p>
+    <details class="section-details" id="section-data" open><summary>11. データ保存・クラウド共有</summary><div class="section-body">
+
+      <p class="hint">希望日程は Google スプレッドシート（GAS）で全員共有できます。localStorage はオフライン用キャッシュです。</p>
+      <label class="gas-url-label">GAS Web アプリ URL
+        <input type="url" id="gasUrlInput" class="gas-url-input" placeholder="https://script.google.com/macros/s/.../exec">
+      </label>
+      <div class="row btn-row">
+        <button type="button" id="btnSaveGasUrl" class="btn btn-secondary">GAS URL を保存</button>
+        <button type="button" id="btnCloudPull" class="btn btn-secondary">クラウドから取得</button>
+        <button type="button" id="btnCloudPush" class="btn btn-primary">クラウドへ送信</button>
+        <button type="button" id="btnCloudTest" class="btn btn-secondary">接続テスト</button>
+      </div>
+      <p id="cloudStatus" class="cloud-status"></p>
+      <p class="hint">設定手順は README_GAS.md を参照してください。</p>
+      <hr class="section-divider">
+      <p class="hint">JSON バックアップ・localStorage 操作</p>
       <div class="row btn-row">
         <button type="button" id="btnExport" class="btn btn-secondary">JSONエクスポート</button>
         <label class="btn btn-secondary file-label">
@@ -667,7 +687,7 @@ dialog { width: calc(100vw - 2rem); max-width: 400px; }
   </main>
 
   <footer class="app-footer">
-    <p>ローカルで動作します。外部サーバーへの通信は行いません。</p>
+    <p>GitHub Pages + 任意で GAS（Google スプレッドシート）連携。GAS 未設定時は localStorage のみ。</p>
   </footer>
 
   <!-- 勤務枠追加ダイアログ（簡易） -->
@@ -730,6 +750,12 @@ const DUTY_TYPES = {
 
 /** localStorage のキー名 */
 const STORAGE_KEY = "dutySchedulerData_v1";
+
+/** GAS Web アプリ URL の保存キー */
+const GAS_URL_STORAGE_KEY = "dutySchedulerGasUrl_v1";
+
+/** クラウド保存の debounce 用タイマー */
+let gasSaveTimer = null;
 
 /** 希望の記号（将来 LINE 取り込みでも同じ値を使えるように定義） */
 const PREF = {
@@ -1536,6 +1562,200 @@ function updateAssignmentHistory(monthKey, monthData) {
 }
 
 // ========================================
+// GAS クラウド同期（Google スプレッドシート）
+// ========================================
+
+function getGasUrl() {
+  return (localStorage.getItem(GAS_URL_STORAGE_KEY) || "").trim();
+}
+
+function setGasUrl(url) {
+  localStorage.setItem(GAS_URL_STORAGE_KEY, url.trim());
+}
+
+function showCloudStatus(msg) {
+  const el = document.getElementById("cloudStatus");
+  if (el) el.textContent = msg;
+}
+
+/** UTF-8 文字列を Base64 化（GAS へ送信用） */
+function toBase64Utf8(str) {
+  return btoa(unescape(encodeURIComponent(str)));
+}
+
+/** クラウドに送る月データ（partial=true なら希望日程など軽量データのみ） */
+function buildMonthPayloadForCloud(monthData, partial) {
+  if (partial) {
+    return {
+      activeMembers: monthData.activeMembers,
+      preferences: monthData.preferences,
+      limits: monthData.limits,
+    };
+  }
+  return {
+    activeMembers: monthData.activeMembers,
+    preferences: monthData.preferences,
+    limits: monthData.limits,
+    majorSunday: monthData.majorSunday,
+    dutySlots: monthData.dutySlots,
+    assignments: monthData.assignments,
+  };
+}
+
+/** クラウドの月データをローカルにマージ（preferences は上書きマージ） */
+function mergeCloudIntoMonth(localData, cloudData) {
+  if (!cloudData) return;
+  if (cloudData.activeMembers) {
+    Object.assign(localData.activeMembers, cloudData.activeMembers);
+  }
+  if (cloudData.preferences) {
+    Object.entries(cloudData.preferences).forEach(([member, dates]) => {
+      if (!localData.preferences[member]) localData.preferences[member] = {};
+      Object.assign(localData.preferences[member], dates);
+    });
+  }
+  if (cloudData.limits) {
+    Object.entries(cloudData.limits).forEach(([member, lim]) => {
+      localData.limits[member] = Object.assign({}, localData.limits[member] || {}, lim);
+    });
+  }
+  if (cloudData.majorSunday !== undefined && cloudData.majorSunday !== null) {
+    localData.majorSunday = cloudData.majorSunday;
+  }
+  if (cloudData.dutySlots && cloudData.dutySlots.length > 0) {
+    localData.dutySlots = cloudData.dutySlots;
+  }
+  if (cloudData.assignments && Object.keys(cloudData.assignments).length > 0) {
+    localData.assignments = cloudData.assignments;
+  }
+}
+
+function buildGasApiUrl(params) {
+  const base = getGasUrl();
+  const q = new URLSearchParams(params).toString();
+  return base + (base.indexOf("?") >= 0 ? "&" : "?") + q;
+}
+
+/** GAS から月データを取得 */
+async function gasFetchMonth(monthKey) {
+  const url = buildGasApiUrl({ action: "getMonth", monthKey: monthKey });
+  const res = await fetch(url);
+  return res.json();
+}
+
+/** GAS へ月データを保存（サーバー側でマージ） */
+async function gasSaveMonth(monthKey, monthData, partial) {
+  const payload = buildMonthPayloadForCloud(monthData, partial);
+  const b64 = toBase64Utf8(JSON.stringify(payload));
+  const url = buildGasApiUrl({
+    action: "saveMonth",
+    monthKey: monthKey,
+    data: b64,
+  });
+  const res = await fetch(url);
+  return res.json();
+}
+
+/** クラウドから取得して UI を更新 */
+async function syncFromCloud(monthKey, silent) {
+  if (!getGasUrl()) {
+    if (!silent) showCloudStatus("GAS URL が未設定です");
+    return false;
+  }
+  try {
+    const result = await gasFetchMonth(monthKey);
+    if (!result || !result.ok) {
+      if (!silent) showCloudStatus("取得失敗: " + (result?.error || "不明"));
+      return false;
+    }
+    if (result.monthData) {
+      const data = getMonthData(monthKey);
+      mergeCloudIntoMonth(data, result.monthData);
+      saveToLocalStorage();
+      const { year, month } = parseMonthKey(monthKey);
+      applyMajorSundaySlots(data);
+      renderMemberCheckboxes(data);
+      renderMajorSundaySelect(year, month, data);
+      renderSlotsTable(data);
+      renderLimitsTable(data);
+      renderPreferenceTable(year, month, data);
+      renderResults(data, year, month);
+      if (!silent) {
+        showCloudStatus("クラウドから反映しました（" + (result.updatedAt || "") + "）");
+      }
+    } else if (!silent) {
+      showCloudStatus("クラウドにはまだこの月のデータがありません");
+    }
+    return true;
+  } catch (err) {
+    if (!silent) showCloudStatus("接続エラー: " + err.message);
+    return false;
+  }
+}
+
+/** クラウドへ送信（full=true で割り当て結果なども含む） */
+async function pushToCloud(monthKey, options) {
+  const quiet = options && options.quiet;
+  const partial = !(options && options.full);
+  if (!getGasUrl()) {
+    if (!quiet) showCloudStatus("GAS URL が未設定です");
+    return;
+  }
+  saveCurrentMonthFromUI();
+  const data = getMonthData(monthKey);
+  applyMajorSundaySlots(data);
+  if (!quiet) showCloudStatus("送信中...");
+  try {
+    const result = await gasSaveMonth(monthKey, data, partial);
+    if (result && result.ok) {
+      if (result.monthData) {
+        mergeCloudIntoMonth(data, result.monthData);
+        saveToLocalStorage();
+        const { year, month } = parseMonthKey(monthKey);
+        renderPreferenceTable(year, month, data);
+      }
+      if (!quiet) {
+        showCloudStatus("クラウドへ保存しました（" + (result.updatedAt || "") + "）");
+      }
+    } else if (!quiet) {
+      showCloudStatus("保存失敗: " + (result?.error || "不明"));
+    }
+  } catch (err) {
+    if (!quiet) showCloudStatus("送信エラー: " + err.message);
+  }
+}
+
+/** 希望変更などの autoSave 後にクラウドへ（debounce） */
+function scheduleCloudSave() {
+  if (!getGasUrl()) return;
+  clearTimeout(gasSaveTimer);
+  gasSaveTimer = setTimeout(() => {
+    pushToCloud(currentMonthKey, { quiet: true, full: false });
+  }, 2000);
+}
+
+/** GAS 接続テスト */
+async function testGasConnection() {
+  if (!getGasUrl()) {
+    showCloudStatus("GAS URL を入力して保存してください");
+    return;
+  }
+  showCloudStatus("接続テスト中...");
+  try {
+    const url = buildGasApiUrl({ action: "ping" });
+    const res = await fetch(url);
+    const result = await res.json();
+    if (result && result.ok) {
+      showCloudStatus("接続 OK（GAS 応答あり）");
+    } else {
+      showCloudStatus("応答異常: " + JSON.stringify(result));
+    }
+  } catch (err) {
+    showCloudStatus("接続失敗: " + err.message);
+  }
+}
+
+// ========================================
 // UI 描画
 // ========================================
 
@@ -1592,6 +1812,20 @@ function initUI() {
       showSaveStatus("初期化しました");
     }
   });
+
+  const gasInput = document.getElementById("gasUrlInput");
+  if (gasInput) gasInput.value = getGasUrl();
+  document.getElementById("btnSaveGasUrl").addEventListener("click", () => {
+    setGasUrl(gasInput.value);
+    showCloudStatus("GAS URL を保存しました");
+  });
+  document.getElementById("btnCloudPull").addEventListener("click", () => {
+    syncFromCloud(currentMonthKey, false);
+  });
+  document.getElementById("btnCloudPush").addEventListener("click", () => {
+    pushToCloud(currentMonthKey, { full: true });
+  });
+  document.getElementById("btnCloudTest").addEventListener("click", testGasConnection);
 }
 
 /**
@@ -1620,6 +1854,10 @@ function loadMonthUI(monthKey) {
   renderWarnings([]);
 
   showSaveStatus("");
+
+  if (getGasUrl()) {
+    syncFromCloud(monthKey, true);
+  }
 }
 
 function renderMemberCheckboxes(data) {
@@ -1955,6 +2193,7 @@ function showSaveStatus(msg) {
 
 function autoSave() {
   saveToLocalStorage();
+  scheduleCloudSave();
 }
 
 function saveCurrentMonthFromUI() {
@@ -2033,6 +2272,7 @@ function onRunAssignment() {
 
   updateAssignmentHistory(currentMonthKey, data);
   autoSave();
+  if (getGasUrl()) pushToCloud(currentMonthKey, { full: true });
 
   showSaveStatus("自動割り当てを実行しました");
 }
